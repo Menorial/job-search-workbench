@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<title>求职工作台 · Boss 直聘</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #fafbfc;
+  --border: #e6e8ec;
+  --border-2: #eef0f4;
+  --text: #0f172a;
+  --text-2: #475569;
+  --text-3: #94a3b8;
+  --accent: #2563eb;
+  --accent-2: #1d4ed8;
+  --accent-soft: #eff4ff;
+  --green: #059669;
+  --amber: #b45309;
+  --red: #dc2626;
+  --radius: 10px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(15, 23, 42, .04);
+  --shadow-lg: 0 16px 40px rgba(15, 23, 42, .14);
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { font: inherit; }
+
+/* ---------- 布局 ---------- */
+.app { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; }
+.sidebar {
+  position: sticky; top: 0; height: 100vh;
+  display: flex; flex-direction: column;
+  padding: 18px 12px 14px;
+  background: var(--surface); border-right: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 10px; padding: 2px 8px 20px; }
+.brand-mark {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; letter-spacing: -.5px;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, .28);
+}
+.brand-name { font-size: 13.5px; font-weight: 600; letter-spacing: -.01em; }
+.brand-sub { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+.nav { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+.nav-label { margin: 16px 10px 6px; font-size: 11px; font-weight: 600; color: var(--text-3); letter-spacing: .04em; }
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  width: 100%; height: 34px; padding: 0 10px;
+  border: 0; border-radius: var(--radius-sm); background: none;
+  color: var(--text-2); font-size: 13.5px; font-weight: 500;
+  text-align: left; cursor: pointer; transition: background .12s, color .12s;
+}
+.nav-item .icon { width: 16px; height: 16px; color: var(--text-3); flex: none; }
+.nav-item:hover { background: var(--surface-2); color: var(--text); }
+.nav-item.active { background: var(--accent-soft); color: var(--accent); }
+.nav-item.active .icon { color: var(--accent); }
+.sidebar-foot { margin-top: auto; padding: 14px 10px 2px; border-top: 1px solid var(--border-2); }
+.env-row { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-2); }
+.foot-hint { margin-top: 4px; font-size: 11px; color: var(--text-3); }
+.dot { display: inline-block; vertical-align: middle; width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); flex: none; }
+.dot.ok { background: #10b981; }
+.dot.bad { background: #ef4444; }
+.dot.run { background: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+.main { min-width: 0; display: flex; flex-direction: column; }
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  padding: 16px 28px 14px;
+  background: rgba(245, 246, 248, .88); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+.topbar-inner { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; max-width: 1380px; width: 100%; margin: 0 auto; }
+.page-title { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.012em; }
+.page-sub { margin: 2px 0 0; font-size: 12.5px; color: var(--text-3); }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.content { padding: 20px 28px 56px; max-width: 1380px; width: 100%; margin: 0 auto; }
+.version-banner {
+  display: none; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 28px; background: #fef2f2;
+  border-bottom: 1px solid #fecaca; color: #991b1b; font-size: 13px;
+}
+.version-banner.show { display: flex; }
+.version-banner .vb-detail { color: #b91c1c; opacity: .75; font-size: 12px; }
+.version-banner code {
+  padding: 1px 5px; border-radius: 4px; background: rgba(153, 27, 27, .08);
+  font-family: var(--mono); font-size: 12px;
+}
+.page { display: none; }
+.page.active { display: block; }
+
+/* ---------- 通用 ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 34px; padding: 0 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s; white-space: nowrap;
+}
+.btn:hover { background: var(--surface-2); border-color: #d9dde4; }
+.btn .icon { width: 15px; height: 15px; }
+.btn-sm { height: 28px; padding: 0 9px; font-size: 12.5px; }
+.copy-inline { height: 22px; padding: 0 6px; margin-left: 8px; font-size: 11.5px; vertical-align: middle; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
+.btn-primary:disabled { opacity: .45; cursor: not-allowed; background: var(--accent); }
+.btn-danger { color: var(--red); border-color: #f0c9c9; }
+.btn-danger:hover { background: #fef2f2; border-color: #e9b4b4; }
+.btn-danger:disabled { opacity: .45; cursor: not-allowed; background: var(--surface); }
+.btn-ghost { border-color: transparent; background: transparent; color: var(--text-2); }
+.btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+.btn-block { width: 100%; }
+.input, select.input {
+  width: 100%; height: 34px; padding: 0 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text); font-size: 13.5px; outline: none;
+  transition: border-color .12s, box-shadow .12s;
+}
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
+select.input { cursor: pointer; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 15px 18px 0; }
+.card-title { font-size: 13.5px; font-weight: 600; letter-spacing: -.005em; }
+.card-sub { margin-top: 2px; font-size: 12px; color: var(--text-3); }
+.card-body { padding: 14px 18px 18px; }
+.muted { color: var(--text-3); }
+.num { font-variant-numeric: tabular-nums; }
+.empty { padding: 46px 16px; text-align: center; color: var(--text-3); font-size: 13px; }
+.empty strong { display: block; margin-bottom: 4px; color: var(--text-2); font-weight: 500; }
+
+/* ---------- 总览 ---------- */
+.kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.kpi { padding: 13px 15px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.kpi-label { font-size: 12px; color: var(--text-3); }
+.kpi-value { margin-top: 5px; font-size: 23px; font-weight: 600; letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
+.kpi-unit { margin-left: 2px; font-size: 12px; font-weight: 500; color: var(--text-3); }
+.kpi-foot { margin-top: 3px; font-size: 11.5px; color: var(--text-3); }
+.chart-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 10px; margin-top: 10px; }
+.chart { height: 292px; padding: 6px 10px 4px; }
+
+/* ---------- 职位 ---------- */
+.toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 12px 14px; margin-bottom: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.search-wrap { position: relative; flex: 1 1 220px; min-width: 180px; }
+.search-wrap .icon { position: absolute; left: 10px; top: 9px; width: 15px; height: 15px; color: var(--text-3); }
+.search-wrap .input { padding-left: 32px; }
+.toolbar select.input { width: auto; min-width: 118px; }
+.toolbar-count { margin-left: auto; font-size: 12.5px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.table-card { overflow: hidden; }
+.table-wrap { overflow: auto; max-height: calc(100vh - 250px); }
+table.data { width: 100%; min-width: 980px; border-collapse: separate; border-spacing: 0; font-size: 13px; table-layout: fixed; }
+table.data th { position: sticky; top: 0; z-index: 2; padding: 9px 14px; background: var(--surface-2); border-bottom: 1px solid var(--border); color: var(--text-3); font-size: 11.5px; font-weight: 600; text-align: left; white-space: nowrap; }
+table.data td { padding: 9px 14px; border-bottom: 1px solid var(--border-2); vertical-align: middle; }
+table.data th, table.data td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+table.data th:first-child, table.data td:first-child { white-space: normal; }
+table.data tbody tr { cursor: pointer; }
+table.data tbody tr:hover td { background: #f8fafc; }
+table.data tbody tr:last-child td { border-bottom: 0; }
+table.data.history { min-width: 0; table-layout: auto; }
+.job-name { font-weight: 500; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+.job-skills { margin-top: 2px; font-size: 11.5px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-company { color: var(--text-2); }
+.score { display: flex; align-items: center; gap: 8px; }
+.score-num { width: 24px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.score-track { display: block; width: 58px; height: 4px; border-radius: 2px; background: #eef2f7; overflow: hidden; }
+.score-fill { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+.score-fill.mid { background: #f59e0b; }
+.score-fill.low { background: #ef4444; }
+
+/* ---------- 爬取 ---------- */
+.crawl-grid { display: grid; grid-template-columns: 344px minmax(0, 1fr); gap: 10px; align-items: stretch; }
+.form-card { padding: 16px 18px 18px; }
+.notice { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; padding: 8px 11px; border: 1px solid #fde68a; border-radius: var(--radius-sm); background: #fffbeb; color: #92400e; font-size: 12px; }
+.notice .btn { height: 26px; flex: none; }
+.form-title { margin: 0 0 10px; font-size: 11.5px; font-weight: 600; color: var(--text-3); letter-spacing: .04em; }
+.form-section + .form-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-2); }
+.field { margin-bottom: 12px; }
+.field:last-child { margin-bottom: 0; }
+.field > label { display: block; margin-bottom: 5px; font-size: 12.5px; color: var(--text-2); }
+.field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+.field-head label { margin: 0; font-size: 12.5px; color: var(--text-2); }
+.field-head .btn { height: 24px; padding: 0 7px; font-size: 12px; }
+.field-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.field-row > .field { flex: 1 1 120px; min-width: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.chip { height: 25px; padding: 0 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text-2); font-size: 12px; cursor: pointer; transition: .12s; }
+.chip:hover { border-color: #c7d2fe; background: var(--accent-soft); color: var(--accent); }
+.check-row { display: flex; align-items: center; gap: 7px; height: 34px; font-size: 13px; color: var(--text-2); }
+.check-row input { width: 14px; height: 14px; accent-color: var(--accent); }
+.form-actions { display: flex; gap: 8px; margin-top: 16px; }
+.form-note { margin-top: 10px; font-size: 11.5px; line-height: 1.6; color: var(--text-3); }
+.run-card { overflow: hidden; display: flex; flex-direction: column; }
+.run-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-bottom: 1px solid var(--border-2); }
+.status { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; }
+.run-meta { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.run-progress { padding: 12px 18px 0; }
+.track { height: 5px; border-radius: 3px; background: #eef2f7; overflow: hidden; }
+.track > div { height: 100%; width: 0; border-radius: 3px; background: var(--accent); transition: width .25s ease; }
+.phase { margin-top: 8px; font-size: 12.5px; color: var(--text-2); min-height: 18px; }
+.log { flex: 1; min-height: 240px; overflow: auto; margin: 12px 18px 16px; padding: 12px 14px; border-radius: var(--radius-sm); background: #0b1220; color: #cbd5e1; font: 12px/1.65 var(--mono); white-space: pre-wrap; word-break: break-all; }
+.log-line.ok { color: #6ee7b7; }
+.log-line.err { color: #fca5a5; }
+.log-line.warn { color: #fcd34d; }
+.log-hint { color: #64748b; }
+.log.idle { background: var(--surface-2); border: 1px dashed var(--border); color: var(--text-3); }
+.log.idle .log-line { color: var(--text-3); }
+
+/* ---------- 简历 ---------- */
+.resume-grid { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 10px; align-items: start; }
+.dropzone { border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 22px 16px; text-align: center; cursor: pointer; background: var(--surface-2); transition: .15s; }
+.dropzone:hover, .dropzone.drag { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone .icon { width: 22px; height: 22px; color: var(--text-3); }
+.dz-title { margin-top: 6px; font-size: 13px; color: var(--text-2); }
+.dz-sub { margin-top: 3px; font-size: 11.5px; color: var(--text-3); }
+.file-list { margin-top: 12px; }
+.file-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-2); font-size: 13px; }
+.file-row:last-child { border-bottom: 0; }
+.file-main { flex: 1; min-width: 0; }
+.file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-meta { font-size: 11.5px; color: var(--text-3); margin-top: 1px; }
+.resume-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.resume-name { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+.resume-sub { color: var(--text-3); font-size: 12.5px; }
+.kv { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--border-2); font-size: 13px; }
+.kv:last-child { border-bottom: 0; }
+.kv .k { color: var(--text-3); flex: none; }
+.kv .v { text-align: right; color: var(--text); max-width: 72%; word-break: break-word; }
+.section-title { margin: 18px 0 8px; font-size: 12px; font-weight: 600; color: var(--text-3); letter-spacing: .04em; }
+.tag { display: inline-block; margin: 0 4px 4px 0; padding: 2px 8px; border-radius: 5px; background: var(--surface-2); border: 1px solid var(--border-2); font-size: 11.5px; color: var(--text-2); }
+.list { margin: 0; padding: 0; list-style: none; }
+.list li { position: relative; padding: 4px 0 4px 15px; font-size: 13px; color: var(--text-2); }
+.list li::before { content: ""; position: absolute; left: 2px; top: 11px; width: 4px; height: 4px; border-radius: 50%; background: var(--text-3); }
+
+/* ---------- 匹配 ---------- */
+.match-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; padding: 14px 18px 18px; }
+.match-summary { margin-top: 14px; }
+.summary-row { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border-2); }
+.summary-row:last-child { border-bottom: 0; }
+.match-list { margin: 0; padding: 0; list-style: none; }
+.match-item { display: flex; align-items: center; gap: 12px; padding: 9px 8px; margin: 0 -8px; border-bottom: 1px solid var(--border-2); border-radius: 6px; cursor: pointer; }
+.match-item:hover { background: var(--surface-2); }
+.match-item:last-child { border-bottom: 0; }
+.match-rank { width: 20px; color: var(--text-3); font-variant-numeric: tabular-nums; font-size: 12px; }
+.match-main { flex: 1; min-width: 0; }
+.match-title { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.match-sub { font-size: 11.5px; color: var(--text-3); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.md-body { border: 0; box-shadow: none; padding: 8px 18px 20px; background: transparent; }
+
+/* ---------- 设置 ---------- */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: stretch; }
+.settings-grid > .card { display: flex; flex-direction: column; }
+.settings-grid .card-body { padding-top: 10px; flex: 1; }
+.cache-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-2); font-size: 13px; }
+.cache-row:last-child { border-bottom: 0; }
+.usage-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--border-2); font-size: 13px; }
+.usage-row:last-child { border-bottom: 0; }
+
+/* ---------- 图表 ---------- */
+.mini-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
+
+/* ---------- 报告 ---------- */
+.report-shell { max-width: 880px; }
+.hint-warn { color: var(--amber); }
+.report { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 38px 44px 44px; box-shadow: var(--shadow); color: var(--text-2); line-height: 1.85; }
+.report h1 { margin: 0 0 18px; font-size: 22px; font-weight: 600; letter-spacing: -.02em; color: var(--text); }
+.report h2 { margin: 30px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-2); font-size: 16px; font-weight: 600; color: var(--text); }
+.report h3 { margin: 20px 0 8px; font-size: 14px; font-weight: 600; color: var(--text); }
+.report p { margin: 10px 0; }
+.report ul, .report ol { margin: 10px 0; padding-left: 22px; }
+.report li { margin: 5px 0; }
+.report strong { color: var(--text); }
+.report table { width: 100%; margin: 12px 0 18px; border-collapse: collapse; font-size: 13px; }
+.report th { padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--border); text-align: left; font-weight: 500; color: var(--text-2); }
+.report td { padding: 8px 10px; border: 1px solid var(--border-2); }
+.report blockquote { margin: 14px 0; padding: 10px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); color: var(--text-2); }
+.report code { padding: 1px 5px; border-radius: 4px; background: #f1f5f9; color: #be123c; font-size: 12.5px; font-family: var(--mono); }
+.report pre { padding: 14px 16px; border-radius: 8px; background: #0b1220; color: #e2e8f0; overflow: auto; }
+.report pre code { background: none; color: inherit; padding: 0; }
+
+.stale-note { display: flex; align-items: center; gap: 10px; margin: 0 18px 14px; padding: 8px 11px; border: 1px solid #fde68a; border-radius: 8px; background: #fffbeb; color: #92400e; font-size: 12.5px; }
+
+/* ---------- 抽屉 / 覆盖层 ---------- */
+.drawer-mask { position: fixed; inset: 0; z-index: 40; background: rgba(15, 23, 42, .32); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.drawer-mask.show { opacity: 1; pointer-events: auto; }
+.drawer { position: fixed; top: 0; right: 0; z-index: 41; width: min(560px, 94vw); height: 100%; display: flex; flex-direction: column; background: var(--surface); border-left: 1px solid var(--border); box-shadow: var(--shadow-lg); transform: translateX(100%); transition: transform .22s ease; }
+.drawer.show { transform: none; }
+.drawer-head { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); }
+.drawer-title { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+.drawer-sub { margin-top: 3px; font-size: 12.5px; color: var(--text-3); }
+.drawer-close { position: absolute; top: 14px; right: 14px; }
+.drawer-body { flex: 1; overflow: auto; padding: 18px 20px 32px; }
+.meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; margin-bottom: 18px; }
+.meta-item .k { font-size: 11.5px; color: var(--text-3); }
+.meta-item .v { margin-top: 2px; font-size: 13px; color: var(--text); }
+.section { margin-top: 20px; }
+.section p { margin: 0; }
+.list.risk li::before { background: #f59e0b; }
+.quote { padding: 11px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border-2); font-size: 13px; color: var(--text-2); }
+.desc { font-size: 13px; line-height: 1.8; color: var(--text-2); white-space: pre-wrap; }
+.dims { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.dim { display: grid; grid-template-columns: 44px 1fr 30px; align-items: center; gap: 10px; font-size: 12px; color: var(--text-2); }
+.dim .track { height: 4px; }
+.dim .v { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-3); }
+.big-score { display: flex; align-items: baseline; gap: 8px; }
+.big-score .n { font-size: 34px; font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.big-score .u { font-size: 12px; color: var(--text-3); }
+#log-drawer .drawer-body { padding: 0; }
+#log-body { flex: 1; margin: 0; border-radius: 0; height: 100%; min-height: 100%; }
+
+/* ---------- 任务条 ---------- */
+.taskbar {
+  position: fixed; left: 50%; bottom: 18px; z-index: 39;
+  display: flex; align-items: center; gap: 10px;
+  min-width: 420px; max-width: min(760px, 92vw);
+  padding: 9px 12px;
+  background: #0f172a; color: #f8fafc;
+  border-radius: 10px; box-shadow: 0 14px 34px rgba(15, 23, 42, .3);
+  transform: translate(-50%, 160%); transition: transform .2s ease;
+}
+.taskbar.show { transform: translate(-50%, 0); }
+.taskbar .dot { width: 8px; height: 8px; }
+.taskbar-label { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
+.taskbar .bar { width: 150px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .18); overflow: hidden; }
+.taskbar .bar > div { height: 100%; width: 0; background: #60a5fa; transition: width .25s ease; }
+.taskbar .pct { font-size: 12px; color: #cbd5e1; width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+.taskbar .btn { height: 26px; border-color: rgba(255, 255, 255, .22); background: transparent; color: #e2e8f0; }
+.taskbar .btn:hover { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .34); }
+.taskbar .btn-danger { color: #fca5a5; border-color: rgba(252, 165, 165, .35); }
+
+/* ---------- Toast ---------- */
+.toast { position: fixed; left: 50%; bottom: 76px; z-index: 60; transform: translate(-50%, 8px); padding: 9px 16px; border-radius: 8px; background: #0f172a; color: #f8fafc; font-size: 13px; opacity: 0; pointer-events: none; transition: .18s; box-shadow: 0 12px 30px rgba(15, 23, 42, .28); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+.icon { display: inline-block; vertical-align: middle; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+@media (max-width: 1180px) {
+  .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .chart-grid { grid-template-columns: 1fr; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .resume-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; flex-direction: row; align-items: center; padding: 10px 12px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .brand { padding: 0 10px 0 0; }
+  .nav { flex-direction: row; overflow-x: auto; }
+  .nav-item { width: auto; flex: none; white-space: nowrap; }
+  .nav-label, .sidebar-foot { display: none; }
+  .content { padding: 16px; }
+  .topbar { padding: 12px 16px; }
+  .crawl-grid, .match-grid { grid-template-columns: 1fr; }
+  .kpi-grid, .mini-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .report { padding: 24px; }
+  .taskbar { min-width: 0; width: 94vw; }
+  .taskbar .bar { flex: 1; width: auto; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-overview" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
+  <symbol id="i-jobs" viewBox="0 0 24 24"><path d="M4 6.5A1.5 1.5 0 0 1 5.5 5h13A1.5 1.5 0 0 1 20 6.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><path d="M8 9h8M8 12.5h8M8 16h5"/></symbol>
+  <symbol id="i-crawl" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M12 12l4-4"/></symbol>
+  <symbol id="i-resume" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><circle cx="10" cy="12.5" r="1.8"/><path d="M7.5 17c.5-1.4 1.4-2 2.5-2s2 .6 2.5 2"/></symbol>
+  <symbol id="i-match" viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/></symbol>
+  <symbol id="i-report" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol>
+  <symbol id="i-charts" viewBox="0 0 24 24"><path d="M6 20V11M12 20V5M18 20v-6"/><path d="M3 20h18"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.56V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.56-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v.1a1.7 1.7 0 0 0 1.56 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.4 6.3"/><path d="M20 4v7h-7"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M5 20h14"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v11M8 10.5l4 4 4-4"/><path d="M5 20h14"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">B</div>
+      <div>
+        <div class="brand-name">求职工作台</div>
+        <div class="brand-sub">Boss 直聘 · 本地数据</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-item active" data-page="overview"><svg class="icon"><use href="#i-overview"/></svg>总览</button>
+      <button class="nav-item" data-page="jobs"><svg class="icon"><use href="#i-jobs"/></svg>职位</button>
+      <div class="nav-label">采集</div>
+      <button class="nav-item" data-page="crawl"><svg class="icon"><use href="#i-crawl"/></svg>爬取</button>
+      <button class="nav-item" data-page="resume"><svg class="icon"><use href="#i-resume"/></svg>简历</button>
+      <div class="nav-label">AI</div>
+      <button class="nav-item" data-page="match"><svg class="icon"><use href="#i-match"/></svg>匹配推荐</button>
+      <button class="nav-item" data-page="report"><svg class="icon"><use href="#i-report"/></svg>市场报告</button>
+      <div class="nav-label">分析</div>
+      <button class="nav-item" data-page="charts"><svg class="icon"><use href="#i-charts"/></svg>数据图表</button>
+      <div class="nav-label">系统</div>
+      <button class="nav-item" data-page="settings"><svg class="icon"><use href="#i-settings"/></svg>设置</button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="env-row"><span class="dot" id="env-dot"></span><span id="env-text">检测环境中…</span></div>
+      <div class="foot-hint">数据存本机 · AI 调用除外</div>
+      <div class="foot-hint">仅供学习研究 · 禁止商用</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="version-banner" id="version-banner">
+      <strong>面板后端是旧版本</strong>
+      <span class="vb-detail"></span>
+      <span>请在启动面板的终端按 <code>Ctrl+C</code>，重新运行 <code>python run.py dashboard</code>，再刷新本页。</span>
+    </div>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div>
+          <h1 class="page-title" id="page-title">总览</h1>
+          <p class="page-sub" id="page-sub">加载中…</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn" onclick="refreshAll()"><svg class="icon"><use href="#i-refresh"/></svg>刷新</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- 总览 -->
+      <section class="page active" id="page-overview">
+        <div class="kpi-grid" id="kpi-grid"></div>
+        <div class="chart-grid">
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">城市分布</div><div class="card-sub">Top 6 · 其余归并为「其他」</div></div></div>
+            <div class="chart" id="chart-city"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">学历要求</div><div class="card-sub">职位占比</div></div></div>
+            <div class="chart" id="chart-edu"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">技能热度</div><div class="card-sub">Top 10 · 出现次数</div></div></div>
+            <div class="chart" id="chart-skill"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">经验要求</div><div class="card-sub">按职位数</div></div></div>
+            <div class="chart" id="chart-exp"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 职位 -->
+      <section class="page" id="page-jobs">
+        <div class="toolbar">
+          <div class="search-wrap">
+            <svg class="icon"><use href="#i-search"/></svg>
+            <input class="input" id="f-keyword" placeholder="搜索职位、公司或技能">
+          </div>
+          <select class="input" id="f-score">
+            <option value="">全部匹配分</option>
+            <option value="high">≥ 70</option>
+            <option value="mid">40 – 69</option>
+            <option value="low">&lt; 40</option>
+            <option value="none">未匹配</option>
+          </select>
+          <select class="input" id="f-city"><option value="">全部城市</option></select>
+          <select class="input" id="f-edu"><option value="">全部学历</option></select>
+          <button class="btn btn-ghost" onclick="resetFilters()">重置</button>
+          <button class="btn btn-sm" onclick="exportJobsCsv()"><svg class="icon"><use href="#i-download"/></svg>导出</button>
+          <button class="btn btn-primary btn-sm" onclick="startMatchFromJobs()">AI 匹配</button>
+          <span class="toolbar-count" id="jobs-count"></span>
+        </div>
+        <div class="card table-card">
+          <div class="table-wrap">
+            <table class="data">
+              <colgroup>
+                <col>
+                <col style="width:146px">
+                <col style="width:118px">
+                <col style="width:74px">
+                <col style="width:88px">
+                <col style="width:68px">
+                <col style="width:122px">
+                <col style="width:84px">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>职位</th><th class="col-company">公司</th><th>薪资</th><th>城市</th>
+                  <th class="col-exp">经验</th><th class="col-edu">学历</th><th>匹配分</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="jobs-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 爬取 -->
+      <section class="page" id="page-crawl">
+        <div class="crawl-grid">
+          <div class="card form-card">
+            <div id="crawl-env-banner"></div>
+            <div class="form-section">
+              <p class="form-title">搜索条件</p>
+              <div class="field">
+                <label for="c-keyword">关键词</label>
+                <input class="input" id="c-keyword" placeholder="python / ai 实习 / 数据分析" autocomplete="off">
+              </div>
+              <div class="field">
+                <div class="field-head">
+                  <label for="c-city">城市</label>
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="startCitiesUpdate()">更新城市列表</button>
+                </div>
+                <input class="input" id="c-city" list="city-list" value="全国" autocomplete="off">
+                <datalist id="city-list"></datalist>
+                <div class="chips" id="city-quick"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label for="c-pages">页数</label><input class="input" type="number" id="c-pages" value="3" min="1" max="30"></div>
+                <div class="field"><label for="c-detail">详情条数</label><input class="input" type="number" id="c-detail" value="0" min="0" max="200"></div>
+              </div>
+            </div>
+            <div class="form-section">
+              <p class="form-title">抓取选项</p>
+              <div class="field-row">
+                <div class="field">
+                  <label for="c-format">输出格式</label>
+                  <select class="input" id="c-format"><option value="json">JSON</option><option value="csv">CSV</option></select>
+                </div>
+                <div class="field">
+                  <label>请求节奏</label>
+                  <label class="check-row"><input type="checkbox" id="c-slow"> 慢速模式</label>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary btn-block" id="c-start" onclick="startCrawl()"><svg class="icon"><use href="#i-play"/></svg>开始爬取</button>
+                <button class="btn btn-danger" id="c-stop" onclick="stopTask()" disabled><svg class="icon"><use href="#i-stop"/></svg>停止</button>
+              </div>
+              <p class="form-note">每页 30 条。详情每条约 5–10 秒，已抓过的会自动跳过；关掉页面不影响后台任务。</p>
+            </div>
+          </div>
+          <div class="card run-card">
+            <div class="run-head">
+              <span class="status"><span class="dot" id="crawl-status-dot"></span><span id="crawl-status-text">空闲</span></span>
+              <span class="run-meta" id="crawl-meta"></span>
+            </div>
+            <div class="run-progress">
+              <div class="track"><div id="crawl-bar"></div></div>
+              <div class="phase" id="crawl-phase">等待开始</div>
+            </div>
+            <div class="log" id="crawl-log"><div class="log-line log-hint">运行日志会显示在这里</div></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:10px">
+          <div class="card-head" style="padding-bottom:12px">
+            <div><div class="card-title">最近运行</div><div class="card-sub">来自 data/logs/run_history.jsonl</div></div>
+          </div>
+          <div id="crawl-history"></div>
+        </div>
+      </section>
+
+      <!-- 简历 -->
+      <section class="page" id="page-resume">
+        <div class="resume-grid">
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">简历文件</div><div class="card-sub">支持 PDF / Word / Markdown / 文本</div></div></div>
+            <div class="card-body">
+              <div class="dropzone" id="resume-drop" onclick="document.getElementById('resume-file').click()">
+                <svg class="icon"><use href="#i-upload"/></svg>
+                <div class="dz-title">点击选择，或把文件拖到这里</div>
+                <div class="dz-sub">pdf / docx / md / txt · 最大 10MB</div>
+              </div>
+              <input type="file" id="resume-file" accept=".pdf,.docx,.md,.txt" hidden>
+              <div class="file-list" id="resume-files"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head" style="align-items:center">
+              <div><div class="card-title">结构化简历</div><div class="card-sub" id="resume-meta">尚未解析</div></div>
+              <button class="btn btn-sm" onclick="reparseResume()">重新解析</button>
+            </div>
+            <div class="card-body" id="resume-content"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 匹配推荐 -->
+      <section class="page" id="page-match">
+        <div class="card">
+          <div class="card-head" style="padding-bottom:2px">
+            <div><div class="card-title">AI 匹配</div><div class="card-sub">规则粗筛 + DeepSeek 精评，简历没变时命中缓存不花钱</div></div>
+          </div>
+          <div class="match-grid">
+            <div>
+              <div class="field-row">
+                <div class="field"><label for="m-max">候选上限</label><input class="input" type="number" id="m-max" value="50" min="1" max="500"></div>
+                <div class="field"><label for="m-concurrency">并发数</label><input class="input" type="number" id="m-concurrency" value="3" min="1" max="8"></div>
+              </div>
+              <button class="btn btn-primary btn-block" onclick="startMatch()"><svg class="icon"><use href="#i-play"/></svg>开始匹配</button>
+              <p class="form-note">先从全部职位里按城市/学历/薪资/技能粗筛，再交给模型逐个打分。</p>
+              <div class="match-summary" id="match-summary"></div>
+            </div>
+            <div id="match-top"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:10px">
+          <div class="card-head" style="align-items:center">
+            <div><div class="card-title">推荐投递 + 打招呼话术</div><div class="card-sub" id="top10-meta">TOP10，每个岗位 3 版话术</div></div>
+            <button class="btn" onclick="startTop10()"><svg class="icon"><use href="#i-play"/></svg>生成推荐</button>
+          </div>
+          <div id="top10-content" class="report md-body"><div class="empty"><strong>还没有生成推荐</strong>先完成匹配，再点右上角「生成推荐」</div></div>
+        </div>
+      </section>
+
+      <!-- 报告 -->
+      <section class="page" id="page-report">
+        <div class="report-shell">
+          <div class="card" style="margin-bottom:10px">
+            <div class="card-head" style="align-items:center;padding-bottom:14px">
+              <div><div class="card-title">市场分析报告</div><div class="card-sub" id="report-meta">由 DeepSeek 根据聚合统计生成</div></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn" onclick="startReport()"><svg class="icon"><use href="#i-play"/></svg>生成报告</button>
+                <button class="btn" onclick="downloadReport()"><svg class="icon"><use href="#i-download"/></svg>导出</button>
+              </div>
+            </div>
+          </div>
+          <div class="report" id="report-content"><div class="empty"><strong>还没有报告</strong>点上方「生成报告」</div></div>
+        </div>
+      </section>
+
+      <!-- 图表 -->
+      <section class="page" id="page-charts">
+        <div class="mini-kpis" id="charts-kpis"></div>
+        <div class="chart-grid">
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">薪资分布</div><div class="card-sub">月薪区间 · 5K 一档</div></div></div>
+            <div class="chart" id="chart-salary"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">技能排行</div><div class="card-sub">Top 15</div></div></div>
+            <div class="chart" id="chart-skill2"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">招聘公司</div><div class="card-sub">Top 10 · 在招职位数</div></div></div>
+            <div class="chart" id="chart-company"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">城市分布</div><div class="card-sub">Top 10 · 按职位数</div></div></div>
+            <div class="chart" id="chart-city2"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 设置 -->
+      <section class="page" id="page-settings">
+        <div class="settings-grid">
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">服务状态</div><div class="card-sub">只读</div></div></div>
+            <div class="card-body" id="settings-status"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">AI 参数</div><div class="card-sub">保存到 .env；调用时简历/职位文本会发送给模型</div></div></div>
+            <form class="card-body" id="settings-form" onsubmit="saveSettings(event)">
+              <div class="field">
+                <label for="s-key">DeepSeek API Key</label>
+                <input class="input" type="password" id="s-key" placeholder="留空表示不修改">
+              </div>
+              <div class="field-row">
+                <div class="field"><label for="s-model">模型</label><input class="input" id="s-model"></div>
+                <div class="field"><label for="s-base">Base URL</label><input class="input" id="s-base"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label for="s-threshold">推荐线</label><input class="input" type="number" id="s-threshold" min="0" max="100"></div>
+                <div class="field"><label for="s-max">候选上限</label><input class="input" type="number" id="s-max" min="1" max="500"></div>
+                <div class="field"><label for="s-concurrency">并发数</label><input class="input" type="number" id="s-concurrency" min="1" max="8"></div>
+              </div>
+              <button class="btn btn-primary" type="submit">保存设置</button>
+            </form>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">用量与成本</div><div class="card-sub">来自 usage.jsonl</div></div></div>
+            <div class="card-body" id="usage-box"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">缓存</div><div class="card-sub">清理后下次重新计算</div></div></div>
+            <div class="card-body" id="cache-box"></div>
+          </div>
+          <div class="card" style="grid-column:1/-1">
+            <div class="card-head"><div><div class="card-title">数据目录</div><div class="card-sub">除 AI 匹配/解析外，均在本机</div></div></div>
+            <div class="card-body" id="paths-box"></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div class="drawer-mask" id="overlay" onclick="closeOverlays()"></div>
+
+<aside class="drawer" id="detail-drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <button class="btn btn-ghost btn-sm drawer-close" onclick="closeOverlays()" aria-label="关闭"><svg class="icon"><use href="#i-x"/></svg></button>
+    <h2 class="drawer-title" id="drawer-title">职位详情</h2>
+    <div class="drawer-sub" id="drawer-sub"></div>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</aside>
+
+<aside class="drawer" id="log-drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <button class="btn btn-ghost btn-sm drawer-close" onclick="closeOverlays()" aria-label="关闭"><svg class="icon"><use href="#i-x"/></svg></button>
+    <h2 class="drawer-title">运行日志</h2>
+    <div class="drawer-sub" id="log-sub">实时输出</div>
+  </div>
+  <div class="drawer-body"><pre class="log" id="log-body"></pre></div>
+</aside>
+
+<div class="taskbar" id="taskbar">
+  <span class="dot" id="task-dot"></span>
+  <span class="taskbar-label" id="task-label">任务</span>
+  <div class="bar"><div id="task-bar"></div></div>
+  <span class="pct" id="task-pct">0%</span>
+  <button class="btn btn-sm" onclick="openLogDrawer()">日志</button>
+  <button class="btn btn-sm btn-danger" id="task-stop" onclick="stopTask()">停止</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+const APP_VERSION = 5;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (n) => (n == null || n === '') ? '—' : Number(n).toLocaleString('zh-CN');
+
+function formatBytes(size) {
+  const value = Number(size || 0);
+  if (value < 1024) return value + ' B';
+  if (value < 1024 * 1024) return (value / 1024).toFixed(1) + ' KB';
+  return (value / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+const state = {
+  page: 'overview',
+  jobs: [],
+  visible: [],
+  stats: null,
+  overview: null,
+  threshold: 70,
+  reportHtml: '',
+  reportAt: '',
+  reportTs: 0,
+  resume: null,
+  top10: null,
+  settings: null,
+  env: null,
+  charts: {},
+  task: { timer: null, lastSeq: 0, id: null, running: false, status: 'idle', log: [], finishedAt: 0, kind: '' },
+  crawl: { inited: false }
+};
+
+const PAGES = {
+  overview: { title: '总览', sub: () => {
+    const o = state.overview || {};
+    const parts = [`共 ${fmt(o.total_jobs)} 个职位`];
+    if (o.updated_at) parts.push(`数据 ${o.updated_at}`);
+    if (o.matched_at) parts.push(`匹配 ${String(o.matched_at).slice(5, 16)}`);
+    return parts.join(' · ');
+  } },
+  jobs: { title: '职位', sub: () => '按匹配分排序，点击行查看匹配详情' },
+  crawl: { title: '爬取', sub: () => '通过本机 Chrome 抓取 Boss 直聘职位数据' },
+  resume: { title: '简历', sub: () => '上传并解析简历，作为匹配和话术的依据' },
+  match: { title: '匹配推荐', sub: () => '规则粗筛 + AI 精评，生成投递建议与打招呼话术' },
+  report: { title: '市场报告', sub: () => '由 DeepSeek 根据聚合统计生成' },
+  charts: { title: '数据图表', sub: () => '基于全部爬取结果的本地统计，不消耗 token' },
+  settings: { title: '设置', sub: () => 'API Key、匹配参数、缓存与用量' }
+};
+
+const TASK_LABEL = {
+  crawl: '爬取职位', setup: '启动 Chrome', cities: '更新城市列表', parse: '解析简历',
+  match: 'AI 匹配', report: '生成报告', top10: '生成推荐话术'
+};
+
+const CHART = {
+  accent: '#2563eb', grid: '#eef2f7', axis: '#94a3b8', text: '#475569',
+  ramp: ['#1d4ed8', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#e2e8f0']
+};
+
+/* ---------- 基础 ---------- */
+function toast(message) {
+  const el = $('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+async function checkVersion() {
+  const banner = $('version-banner');
+  if (!banner) return;
+  try {
+    const res = await fetch('/api/version');
+    if (!res.ok) throw new Error('missing');
+    const data = await res.json();
+    if (data.version !== APP_VERSION) {
+      banner.querySelector('.vb-detail').textContent = `后端 v${data.version} / 前端 v${APP_VERSION} · PID ${data.pid || '?'}`;
+      banner.classList.add('show');
+    }
+  } catch (err) {
+    banner.querySelector('.vb-detail').textContent = '后端没有 /api/version（早于 v5 的进程）';
+    banner.classList.add('show');
+  }
+}
+
+function switchPage(name, silent) {
+  if (!PAGES[name]) name = 'overview';
+  state.page = name;
+  document.querySelectorAll('.nav-item').forEach((el) => el.classList.toggle('active', el.dataset.page === name));
+  document.querySelectorAll('.page').forEach((el) => el.classList.toggle('active', el.id === 'page-' + name));
+  $('page-title').textContent = PAGES[name].title;
+  $('page-sub').textContent = PAGES[name].sub();
+  if (!silent) history.replaceState(null, '', '#' + name);
+
+  if (name === 'overview') { renderKpis(); renderOverviewCharts(); }
+  if (name === 'jobs') renderJobs();
+  if (name === 'crawl') initCrawl();
+  if (name === 'resume') loadResume();
+  if (name === 'match') { renderMatch(); loadTop10(); }
+  if (name === 'report') renderReport();
+  if (name === 'charts') renderChartsPage();
+  if (name === 'settings') loadSettings();
+}
+
+/* ---------- 数据 ---------- */
+async function loadAll() {
+  try {
+    const [ov, st, jb, rp] = await Promise.all([
+      fetch('/api/overview').then((r) => r.json()),
+      fetch('/api/stats').then((r) => r.json()),
+      fetch('/api/jobs').then((r) => r.json()),
+      fetch('/api/report_html').then((r) => r.json())
+    ]);
+    state.overview = ov.overview;
+    state.threshold = ov.threshold == null ? 70 : ov.threshold;
+    state.stats = st.stats;
+    state.jobs = jb.jobs || [];
+    state.reportHtml = rp.html || '';
+    state.reportAt = rp.updated_at || '';
+    state.reportTs = rp.updated_ts || 0;
+    fillFilters();
+    switchPage(state.page, true);
+  } catch (err) {
+    $('page-sub').textContent = '数据加载失败：' + err.message;
+  }
+}
+
+function refreshAll() {
+  loadAll();
+  refreshEnv();
+  if (state.page === 'resume') loadResume();
+  if (state.page === 'settings') loadSettings();
+  if (state.page === 'match') loadTop10();
+  if (state.page === 'crawl') refreshHistory();
+  toast('已刷新');
+}
+
+/* ---------- 总览 ---------- */
+function renderKpis() {
+  const o = state.overview, s = state.stats;
+  if (!o || !s) return;
+  const detailRate = o.total_jobs ? Math.round((o.with_detail || 0) * 100 / o.total_jobs) : 0;
+  const median = s.salary_sample ? `${s.salary_median_low}–${s.salary_median_high}` : '—';
+  const cards = [
+    { label: '职位总数', value: fmt(o.total_jobs), unit: '', foot: `${o.files || 0} 个结果文件` },
+    { label: '含职位描述', value: fmt(o.with_detail), unit: '', foot: `覆盖率 ${detailRate}%` },
+    { label: '已 AI 匹配', value: fmt(o.matched_count), unit: '', foot: `待匹配 ${fmt(Math.max(0, o.total_jobs - o.matched_count))}` },
+    { label: '推荐投递', value: fmt(o.recommend_count), unit: '', foot: `≥ ${state.threshold} 分` },
+    { label: '平均匹配分', value: fmt(o.avg_score), unit: '', foot: `最高 ${fmt(o.top_score)}` },
+    { label: '薪资中位数', value: median, unit: 'K', foot: `${fmt(s.salary_sample)} 个薪资样本` }
+  ];
+  $('kpi-grid').innerHTML = cards.map((c) => `
+    <div class="kpi">
+      <div class="kpi-label">${esc(c.label)}</div>
+      <div class="kpi-value">${esc(c.value)}<span class="kpi-unit">${esc(c.unit)}</span></div>
+      <div class="kpi-foot">${esc(c.foot)}</div>
+    </div>`).join('');
+}
+
+function baseOption() {
+  return {
+    textStyle: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif', color: CHART.text },
+    tooltip: {
+      backgroundColor: '#0f172a', borderWidth: 0, padding: [8, 10],
+      textStyle: { color: '#f8fafc', fontSize: 12 },
+      extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,.24)'
+    },
+    animationDuration: 320
+  };
+}
+
+function initChart(id) {
+  const el = $(id);
+  if (!el) return null;
+  if (state.charts[id]) { state.charts[id].dispose(); delete state.charts[id]; }
+  const chart = echarts.init(el);
+  state.charts[id] = chart;
+  return chart;
+}
+
+function hBar(id, items, color) {
+  const chart = initChart(id);
+  if (!chart) return;
+  const list = items.slice().reverse();
+  chart.setOption(Object.assign(baseOption(), {
+    grid: { left: 4, right: 46, top: 10, bottom: 6, containLabel: true },
+    tooltip: Object.assign(baseOption().tooltip, {
+      trigger: 'axis', axisPointer: { type: 'shadow' },
+      formatter: (p) => `${esc(p[0].name)}<br/>${p[0].value} 个职位`
+    }),
+    xAxis: {
+      type: 'value', minInterval: 1,
+      splitLine: { lineStyle: { color: CHART.grid } },
+      axisLabel: { color: CHART.axis, fontSize: 11 },
+      axisLine: { show: false }, axisTick: { show: false }
+    },
+    yAxis: {
+      type: 'category', data: list.map((i) => i[0]),
+      axisLine: { show: false }, axisTick: { show: false },
+      axisLabel: { color: CHART.text, fontSize: 11.5 }
+    },
+    series: [{
+      type: 'bar', data: list.map((i) => i[1]), barMaxWidth: 9,
+      itemStyle: { color: color || CHART.accent, borderRadius: [0, 3, 3, 0] },
+      label: { show: true, position: 'right', color: CHART.axis, fontSize: 11 }
+    }]
+  }), true);
+}
+
+function vBar(id, items, color) {
+  const chart = initChart(id);
+  if (!chart) return;
+  chart.setOption(Object.assign(baseOption(), {
+    grid: { left: 6, right: 12, top: 14, bottom: 4, containLabel: true },
+    tooltip: Object.assign(baseOption().tooltip, {
+      trigger: 'axis', axisPointer: { type: 'shadow' },
+      formatter: (p) => `${esc(p[0].name)}<br/>${p[0].value} 个职位`
+    }),
+    xAxis: {
+      type: 'category', data: items.map((i) => i[0]),
+      axisLine: { lineStyle: { color: '#e5e7eb' } }, axisTick: { show: false },
+      axisLabel: { color: CHART.axis, fontSize: 11 }
+    },
+    yAxis: {
+      type: 'value', minInterval: 1,
+      splitLine: { lineStyle: { color: CHART.grid } },
+      axisLabel: { color: CHART.axis, fontSize: 11 }
+    },
+    series: [{
+      type: 'bar', data: items.map((i) => i[1]), barMaxWidth: 22,
+      itemStyle: { color: color || CHART.accent, borderRadius: [3, 3, 0, 0] }
+    }]
+  }), true);
+}
+
+function donut(id, items) {
+  const chart = initChart(id);
+  if (!chart) return;
+  const total = items.reduce((sum, i) => sum + i[1], 0);
+  const counts = {};
+  items.forEach((i) => { counts[i[0]] = i[1]; });
+  chart.setOption(Object.assign(baseOption(), {
+    tooltip: Object.assign(baseOption().tooltip, {
+      trigger: 'item',
+      formatter: (p) => `${esc(p.name)}<br/>${p.value} 个（${p.percent}%）`
+    }),
+    legend: {
+      orient: 'vertical', right: 12, top: 'middle', icon: 'circle',
+      itemWidth: 7, itemHeight: 7, itemGap: 11,
+      textStyle: { color: CHART.text, fontSize: 11.5 },
+      formatter: (name) => `${name}   ${counts[name] || 0}`
+    },
+    title: {
+      text: String(total), subtext: '职位', left: '31%', top: '42%', textAlign: 'center',
+      textStyle: { fontSize: 22, fontWeight: 600, color: '#0f172a' },
+      subtextStyle: { fontSize: 11, color: CHART.axis }
+    },
+    series: [{
+      type: 'pie', radius: ['62%', '80%'], center: ['32%', '50%'],
+      avoidLabelOverlap: true,
+      itemStyle: { borderColor: '#fff', borderWidth: 2 },
+      label: { show: false }, labelLine: { show: false }, color: CHART.ramp,
+      data: items.map((i) => ({ name: i[0], value: i[1] }))
+    }]
+  }), true);
+}
+
+function renderOverviewCharts() {
+  const s = state.stats;
+  if (!s) return;
+  const topCities = s.cities.slice(0, 6);
+  const shown = topCities.reduce((sum, item) => sum + item[1], 0);
+  const rest = Math.max(0, ((state.overview && state.overview.total_jobs) || 0) - shown);
+  hBar('chart-city', rest > 0 ? topCities.concat([['其他', rest]]) : topCities);
+  const edu = s.education.slice(0, 5);
+  const restEdu = s.education.slice(5).reduce((sum, i) => sum + i[1], 0);
+  donut('chart-edu', restEdu ? edu.concat([['其他', restEdu]]) : edu);
+  hBar('chart-skill', s.skills.slice(0, 10), '#0f766e');
+  hBar('chart-exp', s.experience.slice(0, 6), '#94a3b8');
+}
+
+/* ---------- 职位 ---------- */
+function fillFilters() {
+  const cities = [...new Set(state.jobs.map((j) => (j.location || '').split(' ')[0]).filter(Boolean))].sort();
+  const edus = [...new Set(state.jobs.map((j) => (j.education || '').trim()).filter(Boolean))].sort();
+  $('f-city').innerHTML = '<option value="">全部城市</option>' + cities.map((c) => `<option>${esc(c)}</option>`).join('');
+  $('f-edu').innerHTML = '<option value="">全部学历</option>' + edus.map((e) => `<option>${esc(e)}</option>`).join('');
+}
+
+function resetFilters() {
+  $('f-keyword').value = '';
+  $('f-score').value = '';
+  $('f-city').value = '';
+  $('f-edu').value = '';
+  renderJobs();
+}
+
+function exportJobsCsv() {
+  const list = filteredJobs();
+  if (!list.length) { toast('没有可导出的职位'); return; }
+  const cols = [
+    ['职位', (j) => j.job_name], ['公司', (j) => j.company_name], ['薪资', (j) => j.salary],
+    ['城市', (j) => (j.location || '').split(' ')[0]], ['经验', (j) => j.experience],
+    ['学历', (j) => j.education], ['匹配分', (j) => (j.match_score == null ? '' : j.match_score)],
+    ['技能', (j) => j.skills], ['链接', (j) => j.job_url]
+  ];
+  const cell = (value) => '"' + String(value == null ? '' : value).replace(/"/g, '""') + '"';
+  const lines = [cols.map((c) => cell(c[0])).join(',')];
+  list.forEach((job) => lines.push(cols.map((c) => cell(c[1](job))).join(',')));
+  const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'jobs_' + new Date().toISOString().slice(0, 10) + '.csv';
+  link.click();
+  URL.revokeObjectURL(link.href);
+  toast('已导出 ' + list.length + ' 条');
+}
+
+function filteredJobs() {
+  const kw = $('f-keyword').value.trim().toLowerCase();
+  const score = $('f-score').value;
+  const city = $('f-city').value;
+  const edu = $('f-edu').value;
+  return state.jobs.filter((j) => {
+    if (kw) {
+      const text = `${j.job_name || ''} ${j.company_name || ''} ${j.skills || ''}`.toLowerCase();
+      if (!text.includes(kw)) return false;
+    }
+    const s = j.match_score;
+    if (score === 'high' && !(s != null && s >= 70)) return false;
+    if (score === 'mid' && !(s != null && s >= 40 && s < 70)) return false;
+    if (score === 'low' && !(s != null && s < 40)) return false;
+    if (score === 'none' && s != null) return false;
+    if (city && !(j.location || '').startsWith(city)) return false;
+    if (edu && (j.education || '').trim() !== edu) return false;
+    return true;
+  }).sort((a, b) => (b.match_score == null ? -1 : b.match_score) - (a.match_score == null ? -1 : a.match_score));
+}
+
+function scoreCell(value) {
+  if (value == null) return '<span class="muted">未匹配</span>';
+  const cls = value >= 70 ? '' : (value >= 40 ? ' mid' : ' low');
+  return `<div class="score"><span class="score-num">${value}</span><span class="score-track"><span class="score-fill${cls}" style="width:${value}%"></span></span></div>`;
+}
+
+function renderJobs() {
+  const list = filteredJobs();
+  state.visible = list;
+  $('jobs-count').textContent = `${list.length} / ${state.jobs.length}`;
+  if (!list.length) {
+    $('jobs-tbody').innerHTML = '<tr><td colspan="8"><div class="empty"><strong>没有匹配的职位</strong>换个关键词或清空筛选试试</div></td></tr>';
+    return;
+  }
+  $('jobs-tbody').innerHTML = list.map((j, i) => `
+    <tr data-index="${i}">
+      <td>
+        <div class="job-name">${esc(j.job_name || '未命名职位')}</div>
+        <div class="job-skills">${esc((j.skills || '').slice(0, 64))}</div>
+      </td>
+      <td class="col-company">${esc(j.company_name || '—')}</td>
+      <td class="num">${esc(j.salary || '—')}</td>
+      <td>${esc((j.location || '').split(' ')[0] || '—')}</td>
+      <td class="col-exp">${esc(j.experience || '—')}</td>
+      <td class="col-edu">${esc(j.education || '—')}</td>
+      <td>${scoreCell(j.match_score)}</td>
+      <td style="text-align:right"><button class="btn btn-ghost btn-sm">查看</button></td>
+    </tr>`).join('');
+}
+
+$('jobs-tbody').addEventListener('click', (event) => {
+  const row = event.target.closest('tr[data-index]');
+  if (row) openDetail(Number(row.getAttribute('data-index')));
+});
+
+/* ---------- 详情抽屉 ---------- */
+function dimRows(dims) {
+  const names = { skill: '技能', exp: '经验', edu: '学历', city: '城市', salary: '薪资', company: '公司' };
+  return Object.keys(names).map((key) => {
+    const value = dims && dims[key] != null ? dims[key] : 0;
+    return `<div class="dim"><span>${names[key]}</span><span class="track"><span class="score-fill" style="width:${value}%;display:block;height:100%;border-radius:2px"></span></span><span class="v">${value}</span></div>`;
+  }).join('');
+}
+
+function openDetail(index) {
+  const job = state.visible[index];
+  if (job) showJob(job);
+}
+
+function showJob(j) {
+  $('drawer-title').textContent = j.job_name || '职位详情';
+  $('drawer-sub').textContent = [j.company_name, j.salary, (j.location || '').split(' ')[0]].filter(Boolean).join(' · ');
+
+  const score = j.match_score;
+  const scoreBlock = score == null
+    ? '<div class="muted" style="font-size:13px">这个职位还没做 AI 匹配，去「匹配推荐」跑一次即可看到评分与话术。</div>'
+    : `<div class="big-score"><span class="n">${score}</span><span class="u">/ 100 匹配分</span></div><div class="dims">${dimRows(j.match_dims)}</div>`;
+
+  const meta = [
+    ['经验', j.experience], ['学历', j.education],
+    ['公司规模', j.company_size], ['公司类型', j.company_type],
+    ['工作地点', j.location], ['HR', [j.hr_name, j.hr_title].filter(Boolean).join(' · ')]
+  ].filter((item) => item[1]).map((item) => `
+      <div class="meta-item"><div class="k">${esc(item[0])}</div><div class="v">${esc(item[1])}</div></div>`).join('');
+
+  const list = (items, cls) => (items && items.length)
+    ? `<ul class="list ${cls || ''}">${items.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>` : '';
+  const tags = (j.skills || '').split(/[,，、]/).map((s) => s.trim()).filter(Boolean)
+    .map((s) => `<span class="tag">${esc(s)}</span>`).join('');
+
+  const parts = [];
+  parts.push(`<div class="section"><div class="section-title">匹配评分</div>${scoreBlock}</div>`);
+  if (meta) parts.push(`<div class="section"><div class="meta-grid">${meta}</div></div>`);
+  if (j.match_reasons && j.match_reasons.length) parts.push(`<div class="section"><div class="section-title">匹配理由</div>${list(j.match_reasons)}</div>`);
+  if (j.match_risks && j.match_risks.length) parts.push(`<div class="section"><div class="section-title">风险点</div>${list(j.match_risks, 'risk')}</div>`);
+  if (j.cover_tips) parts.push(`<div class="section"><div class="section-title">打招呼建议</div><div class="quote">${esc(j.cover_tips)}</div></div>`);
+  if (tags) parts.push(`<div class="section"><div class="section-title">技能标签</div><div>${tags}</div></div>`);
+  if (j.welfare) parts.push(`<div class="section"><div class="section-title">福利待遇</div><div style="font-size:13px;color:var(--text-2)">${esc(j.welfare)}</div></div>`);
+  if (j.job_description) parts.push(`<div class="section"><div class="section-title">职位描述</div><div class="desc">${esc(j.job_description)}</div></div>`);
+  if (j.job_url) parts.push(`<div class="section"><a class="btn" href="${esc(j.job_url)}" target="_blank" rel="noopener"><svg class="icon"><use href="#i-external"/></svg>在 Boss 打开</a></div>`);
+
+  $('drawer-body').innerHTML = parts.join('');
+  $('overlay').classList.add('show');
+  $('detail-drawer').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetail() {
+  $('detail-drawer').classList.remove('show');
+  if (!$('log-drawer').classList.contains('show')) {
+    $('overlay').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+}
+
+function openLogDrawer() {
+  $('log-body').textContent = state.task.log.join('\n') || '暂无日志';
+  $('log-sub').textContent = TASK_LABEL[state.task.kind] || '实时输出';
+  $('overlay').classList.add('show');
+  $('log-drawer').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  $('log-body').scrollTop = $('log-body').scrollHeight;
+}
+
+function closeLog() {
+  $('log-drawer').classList.remove('show');
+  if (!$('detail-drawer').classList.contains('show')) {
+    $('overlay').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+}
+
+function closeOverlays() {
+  $('detail-drawer').classList.remove('show');
+  $('log-drawer').classList.remove('show');
+  $('overlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeOverlays();
+});
+
+/* ---------- 图表页 ---------- */
+function renderChartsPage() {
+  const s = state.stats;
+  if (!s) return;
+  const cards = [
+    { label: '职位总数', value: fmt(s.total) },
+    { label: '薪资样本', value: fmt(s.salary_sample) },
+    { label: '薪资范围', value: `${s.salary_min}–${s.salary_max}`, unit: 'K' },
+    { label: '技能种类', value: fmt(s.skills.length) }
+  ];
+  $('charts-kpis').innerHTML = cards.map((c) => `
+    <div class="kpi"><div class="kpi-label">${esc(c.label)}</div>
+      <div class="kpi-value">${esc(c.value)}<span class="kpi-unit">${esc(c.unit || '')}</span></div></div>`).join('');
+
+  const buckets = {};
+  state.jobs.forEach((j) => {
+    if (j.salary_min == null || j.salary_min === '') return;
+    const start = Math.floor(Number(j.salary_min) / 5) * 5;
+    const key = `${start}-${start + 5}K`;
+    buckets[key] = (buckets[key] || 0) + 1;
+  });
+  const labels = Object.keys(buckets).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+  vBar('chart-salary', labels.map((l) => [l, buckets[l]]));
+  hBar('chart-skill2', s.skills.slice(0, 15), '#0f766e');
+
+  const companies = {};
+  state.jobs.forEach((j) => {
+    const name = (j.company_name || '').trim();
+    if (name) companies[name] = (companies[name] || 0) + 1;
+  });
+  const companyTop = Object.entries(companies).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  hBar('chart-company', companyTop, '#6366f1');
+  hBar('chart-city2', s.cities.slice(0, 10), '#94a3b8');
+}
+
+/* ---------- 简历 ---------- */
+async function loadResume() {
+  try {
+    const data = await fetch('/api/resume/files').then((r) => r.json());
+    state.resume = data;
+    renderResume();
+  } catch (err) {
+    toast('简历列表加载失败');
+  }
+}
+
+function renderResume() {
+  const data = state.resume || { files: [], structured: {} };
+  const files = data.files || [];
+  $('resume-files').innerHTML = files.length
+    ? files.map((f) => `
+      <div class="file-row">
+        <div class="file-main">
+          <div class="file-name">${esc(f.name)} ${f.is_current ? '<span class="tag">当前</span>' : ''}</div>
+          <div class="file-meta">${formatBytes(f.size)} · ${esc(f.mtime)}</div>
+        </div>
+        <button class="btn btn-sm" onclick="parseResume('${esc(f.path).replace(/\\/g, '\\\\')}')">${f.is_current ? '重新解析' : '解析'}</button>
+      </div>`).join('')
+    : '<div class="empty" style="padding:26px 8px"><strong>还没有简历文件</strong>上传一份 PDF 或 Word 简历</div>';
+
+  const r = data.structured || {};
+  const hasResume = !!(r.name || (r.skills && r.skills.length));
+  const missing = !!(data.current && data.current_exists === false);
+  $('resume-meta').textContent = hasResume
+    ? `已解析${data.current ? ' · ' + data.current.split(/[\\/]/).pop() : ''}`
+    : '尚未解析';
+
+  const missingNote = missing
+    ? `<div class="notice" style="margin-bottom:12px"><span>原始文件已不在：${esc(data.current)}</span></div>`
+    : '';
+
+  if (!hasResume) {
+    $('resume-content').innerHTML = missingNote + '<div class="empty"><strong>还没有结构化简历</strong>上传文件后会自动解析</div>';
+    return;
+  }
+
+  const edu = r.education || {};
+  const salary = r.salary_expectation || {};
+  const skillTags = (r.skills || []).map((s) => `<span class="tag">${esc(s)}</span>`).join('');
+  const projects = (r.projects || []).map((p) => `
+    <div class="kv"><span class="k">${esc(p.name || '项目')}</span><span class="v">${esc((p.tech || []).join(' · '))}</span></div>`).join('');
+
+  $('resume-content').innerHTML = `
+    ${missingNote}
+    <div class="resume-head">
+      <div class="resume-name">${esc(r.name || '未命名')}</div>
+      <div class="resume-sub">${esc(edu.degree || '')}${edu.school ? ' · ' + esc(edu.school) : ''}</div>
+    </div>
+    <div class="kv"><span class="k">工作年限</span><span class="v">${esc(r.years_of_experience == null ? '—' : r.years_of_experience + ' 年')}</span></div>
+    <div class="kv"><span class="k">期望城市</span><span class="v">${esc((r.cities || []).join('、') || '—')}</span></div>
+    <div class="kv"><span class="k">期望薪资</span><span class="v">${salary.min || salary.max ? esc(salary.min + '–' + salary.max + ' 元') : '—'}</span></div>
+    <div class="kv"><span class="k">岗位方向</span><span class="v">${esc((r.job_intent || []).join('、') || '—')}</span></div>
+    ${skillTags ? `<div class="section-title">技能</div><div>${skillTags}</div>` : ''}
+    ${(r.highlights || []).length ? `<div class="section-title">亮点</div><ul class="list">${r.highlights.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>` : ''}
+    ${projects ? `<div class="section-title">项目</div>${projects}` : ''}
+  `;
+}
+
+async function uploadResume(file) {
+  if (!file) return;
+  const res = await fetch('/api/resume/upload?name=' + encodeURIComponent(file.name), {
+    method: 'POST', body: file
+  });
+  const data = await res.json();
+  if (!res.ok) { toast(data.detail || '上传失败'); return; }
+  toast('已上传，开始解析…');
+  await loadResume();
+  await startTask('parse', { path: data.file.path });
+}
+
+async function parseResume(path) {
+  await startTask('parse', { path });
+}
+
+async function reparseResume() {
+  const current = state.resume && state.resume.current;
+  if (!current) { toast('请先上传简历'); return; }
+  if (state.resume.current_exists === false) {
+    toast('原始文件已不存在，请重新上传');
+    return;
+  }
+  await startTask('parse', { path: current, force: true });
+}
+
+/* ---------- 匹配 / 推荐 ---------- */
+function renderMatch() {
+  const o = state.overview;
+  const matched = state.jobs.filter((j) => j.match_score != null)
+    .sort((a, b) => b.match_score - a.match_score);
+
+  $('match-summary').innerHTML = o ? `
+    <div class="summary-row"><span class="muted">已匹配</span><span class="num">${fmt(o.matched_count)} 个</span></div>
+    <div class="summary-row"><span class="muted">平均分</span><span class="num">${fmt(o.avg_score)}</span></div>
+    <div class="summary-row"><span class="muted">最高分</span><span class="num">${fmt(o.top_score)}</span></div>
+    <div class="summary-row"><span class="muted">达到推荐线（≥${state.threshold}）</span><span class="num">${fmt(o.recommend_count)} 个</span></div>
+  ` : '';
+
+  $('match-top').innerHTML = matched.length
+    ? `<div class="card-sub" style="margin-bottom:6px">匹配结果 Top 8</div><ul class="match-list">${matched.slice(0, 8).map((j, i) => `
+        <li class="match-item" data-job-id="${esc(j.job_id || '')}" title="查看详情">
+          <span class="match-rank">${i + 1}</span>
+          <div class="match-main">
+            <div class="match-title">${esc(j.job_name)}</div>
+            <div class="match-sub">${esc(j.company_name)} · ${esc(j.salary || '—')} · ${esc((j.location || '').split(' ')[0])}</div>
+          </div>
+          ${scoreCell(j.match_score)}
+        </li>`).join('')}</ul>`
+    : '<div class="empty"><strong>还没有匹配结果</strong>点左侧「开始匹配」</div>';
+}
+
+async function startMatch() {
+  const max = parseInt($('m-max').value || '50', 10);
+  const concurrency = parseInt($('m-concurrency').value || '3', 10);
+  await startTask('match', { max, concurrency });
+}
+
+$('match-top').addEventListener('click', (event) => {
+  const item = event.target.closest('[data-job-id]');
+  if (!item) return;
+  const jobId = item.getAttribute('data-job-id');
+  const job = state.jobs.find((j) => j.job_id && j.job_id === jobId);
+  if (job) showJob(job);
+});
+
+async function startMatchFromJobs() {
+  // 职位页的快捷入口：用默认参数直接跑一轮匹配
+  const max = parseInt($('m-max').value || '50', 10);
+  const concurrency = parseInt($('m-concurrency').value || '3', 10);
+  const task = await startTask('match', { max, concurrency });
+  if (task) toast('已开始匹配，进度见底部任务条');
+}
+
+async function startTop10() {
+  await startTask('top10', { top: 10 });
+}
+
+async function loadTop10() {
+  try {
+    const data = await fetch('/api/top10').then((r) => r.json());
+    state.top10 = data;
+    const box = $('top10-content');
+    if (!data.html) {
+      box.innerHTML = '<div class="empty"><strong>还没有生成推荐</strong>先完成匹配，再点右上角「生成推荐」</div>';
+      $('top10-meta').textContent = 'TOP10，每个岗位 3 版话术';
+      return;
+    }
+    const note = data.stale
+      ? '<div class="stale-note"><span>匹配结果已更新，这份话术可能过期</span>'
+        + '<button class="btn btn-sm" onclick="startTop10()">重新生成</button></div>'
+      : '';
+    box.innerHTML = note + data.html;
+    attachCopyButtons(box);
+    $('top10-meta').textContent = (data.updated_at ? `生成于 ${data.updated_at}` : 'TOP10，每个岗位 3 版话术')
+      + (data.stale ? ' · 可能过期' : '');
+  } catch (err) { /* ignore */ }
+}
+
+function attachCopyButtons(box) {
+  box.querySelectorAll('li').forEach((item) => {
+    const text = item.textContent.trim();
+    const match = text.match(/^(简短版|技能版|项目版)[：:]\s*([\s\S]+)$/);
+    if (!match) return;
+    const button = document.createElement('button');
+    button.className = 'btn btn-ghost btn-sm copy-inline';
+    button.textContent = '复制';
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      navigator.clipboard.writeText(match[2].trim())
+        .then(() => toast('已复制'))
+        .catch(() => toast('复制失败'));
+    });
+    item.appendChild(button);
+  });
+}
+
+/* ---------- 报告 ---------- */
+function renderReport() {
+  if (state.reportHtml) $('report-content').innerHTML = state.reportHtml;
+  let meta = state.reportAt ? `生成于 ${state.reportAt}` : '由 DeepSeek 根据聚合统计生成';
+  const dataTs = (state.overview && state.overview.updated_ts) || 0;
+  if (state.reportTs && dataTs && state.reportTs < dataTs) {
+    meta += ' · <span class="hint-warn">数据已更新，报告可能过期</span>';
+  }
+  $('report-meta').innerHTML = meta;
+}
+
+async function startReport() {
+  await startTask('report', {});
+}
+
+function downloadReport() {
+  fetch('/api/report').then((r) => r.json()).then((d) => {
+    if (!d.report) { toast('暂无报告'); return; }
+    const blob = new Blob([d.report], { type: 'text/markdown;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'market_report.md';
+    link.click();
+    URL.revokeObjectURL(link.href);
+    toast('已导出 report.md');
+  });
+}
+
+/* ---------- 设置 ---------- */
+async function loadSettings() {
+  try {
+    const [settingsRes, env] = await Promise.all([
+      fetch('/api/settings'),
+      fetch('/api/crawl/env').then((r) => r.json())
+    ]);
+    if (!settingsRes.ok) throw new Error('设置接口不可用（后端旧版本）');
+    state.settings = await settingsRes.json();
+    state.env = env;
+    renderSettings();
+  } catch (err) {
+    const box = $('settings-status');
+    if (box) {
+      box.innerHTML = `<div class="form-note" style="color:#b45309">${esc(err.message)}，请按页面顶部提示重启面板</div>`;
+    }
+    toast(err.message);
+  }
+}
+
+function renderSettings() {
+  const s = state.settings;
+  const env = state.env || {};
+  if (!s) return;
+
+  const model = s.model || '—';
+  const baseUrl = s.base_url || '—';
+  const threshold = s.threshold == null ? '—' : s.threshold;
+  const maxCandidates = s.max_candidates == null ? '—' : s.max_candidates;
+  const concurrency = s.concurrency == null ? '—' : s.concurrency;
+  const keyText = s.api_key_configured
+    ? `已配置（${esc(s.api_key_masked || '')}）`
+    : '<span class="hint-warn">未配置</span>';
+  const chromeText = env.chrome_found
+    ? (env.cdp_alive ? 'Chrome 就绪（端口 ' + env.cdp_port + '）' : 'Chrome 已安装，调试端口未启动')
+    : '未找到 Chrome';
+
+  $('settings-status').innerHTML = `
+    <div class="kv"><span class="k">API Key</span><span class="v">${keyText}</span></div>
+    <div class="kv"><span class="k">模型</span><span class="v">${esc(model)}</span></div>
+    <div class="kv"><span class="k">Base URL</span><span class="v">${esc(baseUrl)}</span></div>
+    <div class="kv"><span class="k">推荐线 / 候选上限</span><span class="v">${esc(threshold)} 分 · ${esc(maxCandidates)} 个</span></div>
+    <div class="kv"><span class="k">并发数</span><span class="v">${esc(concurrency)}</span></div>
+    <div class="kv"><span class="k">Chrome</span><span class="v">${esc(chromeText)}</span></div>
+    <div class="kv"><span class="k">面板版本</span><span class="v">v${APP_VERSION}</span></div>
+  `;
+
+  $('s-model').value = s.model || '';
+  $('s-base').value = s.base_url || '';
+  $('s-threshold').value = s.threshold == null ? '' : s.threshold;
+  $('s-max').value = s.max_candidates == null ? '' : s.max_candidates;
+  $('s-concurrency').value = s.concurrency == null ? '' : s.concurrency;
+  $('s-key').placeholder = s.api_key_configured
+    ? `已配置（${s.api_key_masked || ''}），留空不修改` : 'sk-...';
+
+  const usage = s.usage || {};
+  const totals = usage.totals || {};
+  const phases = usage.by_phase || [];
+  $('usage-box').innerHTML = `
+    <div class="usage-row"><span class="muted">调用次数</span><span class="num">${fmt(totals.calls)}</span></div>
+    <div class="usage-row"><span class="muted">输入 token</span><span class="num">${fmt(totals.prompt_tokens)}</span></div>
+    <div class="usage-row"><span class="muted">输出 token</span><span class="num">${fmt(totals.completion_tokens)}</span></div>
+    <div class="usage-row"><span class="muted">估算成本</span><span class="num">¥${Number(totals.cost || 0).toFixed(3)}</span></div>
+    ${phases.map((p) => `<div class="usage-row"><span class="muted">${esc(p.phase)}</span><span class="num">${p.calls} 次 · ¥${Number(p.cost || 0).toFixed(3)}</span></div>`).join('')}
+    ${phases.length ? '' : '<div class="form-note">还没有调用记录</div>'}
+  `;
+
+  const cache = s.cache || {};
+  const count = (value) => (value == null ? '—' : fmt(value) + ' 条');
+  $('cache-box').innerHTML = `
+    <div class="cache-row"><span>匹配缓存 <span class="muted">${count(cache.match_entries)}</span></span>
+      <button class="btn btn-sm" onclick="clearCache('match')">清理</button></div>
+    <div class="cache-row"><span>话术缓存 <span class="muted">${count(cache.letter_entries)}</span></span>
+      <button class="btn btn-sm" onclick="clearCache('letter')">清理</button></div>
+    <div class="cache-row"><span>详情断点 <span class="muted">${count(cache.detail_progress)}</span></span>
+      <button class="btn btn-sm" onclick="clearCache('progress')">清理</button></div>
+    <div class="form-note">清理匹配缓存后，下次匹配会重新调用模型并产生费用。</div>
+  `;
+
+  const paths = s.paths || {};
+  $('paths-box').innerHTML = Object.keys(paths).length
+    ? Object.keys(paths).map((key) => `
+      <div class="kv"><span class="k">${esc(key)}</span><span class="v" style="font-family:var(--mono);font-size:12px">${esc(paths[key])}</span></div>`).join('')
+    : '<div class="form-note">后端没有返回路径信息（可能是旧版本）</div>';
+}
+
+async function saveSettings(event) {
+  event.preventDefault();
+  const payload = {
+    model: $('s-model').value.trim(),
+    base_url: $('s-base').value.trim(),
+    threshold: parseInt($('s-threshold').value || '70', 10),
+    max_candidates: parseInt($('s-max').value || '50', 10),
+    concurrency: parseInt($('s-concurrency').value || '3', 10)
+  };
+  const key = $('s-key').value.trim();
+  if (key) payload.api_key = key;
+
+  const res = await fetch('/api/settings', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (!res.ok) { toast(data.detail || '保存失败'); return; }
+  state.settings = data;
+  $('s-key').value = '';
+  renderSettings();
+  toast('已保存，新任务立即生效');
+}
+
+async function clearCache(kind) {
+  if (!window.confirm('确定清理这个缓存？')) return;
+  const res = await fetch('/api/cache/clear', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind })
+  });
+  const data = await res.json();
+  if (!res.ok) { toast(data.detail || '清理失败'); return; }
+  toast(data.removed && data.removed.length ? '已清理：' + data.removed.join('、') : '已经是干净的了');
+  loadSettings();
+}
+
+/* ---------- 爬取表单 ---------- */
+function initCrawl() {
+  if (!state.crawl.inited) {
+    state.crawl.inited = true;
+    loadCities();
+    refreshHistory();
+  }
+  refreshEnv();
+  renderCrawlPanel(state.task.lastData || null);
+}
+
+async function loadCities() {
+  try {
+    const data = await fetch('/api/cities').then((r) => r.json());
+    $('city-list').innerHTML = data.all.map((c) => `<option value="${esc(c)}"></option>`).join('');
+    $('city-quick').innerHTML = data.popular.map((c) => `<button type="button" class="chip">${esc(c)}</button>`).join('');
+    $('city-quick').querySelectorAll('.chip').forEach((btn) => {
+      btn.addEventListener('click', () => { $('c-city').value = btn.textContent; });
+    });
+  } catch (err) { /* 手输也能用 */ }
+}
+
+async function refreshEnv() {
+  try {
+    const env = await fetch('/api/crawl/env').then((r) => r.json());
+    state.env = env;
+    const ok = !!(env.cdp_alive && env.chrome_found);
+
+    const banner = $('crawl-env-banner');
+    if (banner) {
+      if (state.task.running) banner.innerHTML = '';
+      else if (ok) banner.innerHTML = '';
+      else if (!env.chrome_found) banner.innerHTML = '<div class="notice"><span>未找到 Chrome，请先安装或设置 CHROME_PATH</span></div>';
+      else banner.innerHTML = '<div class="notice"><span>Chrome 调试端口未启动</span><button class="btn" onclick="startSetup()">启动 Chrome 并登录</button></div>';
+    }
+
+    if (state.task.running) return;
+    const dot = $('env-dot'), text = $('env-text');
+    if (ok) { dot.className = 'dot ok'; text.textContent = `Chrome 就绪 · ${env.cdp_port}`; }
+    else if (!env.chrome_found) { dot.className = 'dot bad'; text.textContent = '未找到 Chrome'; }
+    else { dot.className = 'dot bad'; text.textContent = 'Chrome 未启动调试端口'; }
+  } catch (err) {
+    $('env-dot').className = 'dot bad';
+    $('env-text').textContent = '环境检测失败';
+  }
+}
+
+async function startCrawl() {
+  const keyword = $('c-keyword').value.trim();
+  if (!keyword) { toast('请先输入搜索关键词'); $('c-keyword').focus(); return; }
+  const payload = {
+    keyword,
+    city: ($('c-city').value || '全国').trim() || '全国',
+    pages: parseInt($('c-pages').value || '3', 10),
+    detail: parseInt($('c-detail').value || '0', 10),
+    slow: $('c-slow').checked,
+    format: $('c-format').value
+  };
+  await startTask('crawl', payload);
+}
+
+async function startSetup() {
+  await startTask('setup', { login_wait: 120 });
+}
+
+async function stopTask() {
+  try {
+    await fetch('/api/tasks/stop', { method: 'POST' });
+    toast('正在停止…');
+  } catch (err) { toast('停止失败：' + err.message); }
+}
+
+async function startCitiesUpdate() {
+  await startTask('cities', {});
+}
+
+const HISTORY_KIND = {
+  crawl: '爬取', setup: '启动 Chrome', cities: '城市列表', parse: '简历解析',
+  match: 'AI 匹配', report: '市场报告', top10: '推荐话术'
+};
+
+function historySummary(item) {
+  const kind = item.kind || 'crawl';
+  if (kind === 'crawl') {
+    const parts = [];
+    if (item.keyword) parts.push(item.keyword);
+    if (item.city) parts.push(item.city);
+    if (item.pages) parts.push(item.pages + ' 页');
+    if (item.jobs != null) parts.push(item.jobs + ' 条');
+    if (item.details_ok) parts.push('详情 ' + item.details_ok);
+    return parts.join(' · ');
+  }
+  if (kind === 'parse') return '解析 ' + (item.file || '简历');
+  if (kind === 'match') {
+    const parts = [];
+    if (item.jobs != null) parts.push('共 ' + item.jobs + ' 个结果');
+    if (item.elapsed) parts.push('用时 ' + item.elapsed + 's');
+    return parts.join(' · ');
+  }
+  if (item.elapsed) return '用时 ' + item.elapsed + 's';
+  return '';
+}
+
+async function refreshHistory() {
+  try {
+    const data = await fetch('/api/crawl/history?limit=8').then((r) => r.json());
+    const box = $('crawl-history');
+    if (!data.items || !data.items.length) {
+      box.innerHTML = '<div class="empty"><strong>还没有运行记录</strong>填好参数开始第一次爬取</div>';
+      return;
+    }
+    box.innerHTML = `<div class="table-wrap" style="max-height:none"><table class="data history">
+      <colgroup><col style="width:96px"><col style="width:104px"><col><col style="width:80px"><col style="width:72px"></colgroup>
+      <thead><tr><th>时间</th><th>任务</th><th>摘要</th><th>状态</th><th></th></tr></thead>
+      <tbody>${data.items.map((item) => {
+        const saved = (item.saved || '').split(/[\\/]/).pop();
+        const ok = item.status === 'ok';
+        const kind = item.kind || 'crawl';
+        const summary = historySummary(item) || '—';
+        const tips = ok ? summary : ((item.error || '') || summary);
+        const link = saved
+          ? `<a class="btn btn-ghost btn-sm" href="/api/crawl/result?name=${encodeURIComponent(saved)}">下载</a>`
+          : '<span class="muted">—</span>';
+        return `<tr>
+          <td class="num">${esc((item.time || '').slice(5, 16))}</td>
+          <td>${esc(HISTORY_KIND[kind] || kind)}</td>
+          <td class="muted" title="${esc(tips)}">${esc(summary)}</td>
+          <td><span class="dot ${ok ? 'ok' : 'bad'}"></span>${ok ? '成功' : '失败'}</td>
+          <td style="text-align:right">${link}</td>
+        </tr>`;
+      }).join('')}</tbody></table></div>`;
+  } catch (err) { /* ignore */ }
+}
+
+/* ---------- 任务轮询 / 任务条 ---------- */
+async function startTask(kind, params) {
+  try {
+    const res = await fetch('/api/tasks/start', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ kind }, params || {}))
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const detail = data && data.detail;
+      toast(res.status === 404
+        ? '后端版本过旧，请按页面顶部提示重启面板'
+        : (detail || '启动失败'));
+      return null;
+    }
+    state.task.id = data.task.id;
+    state.task.kind = kind;
+    state.task.running = true;
+    state.task.lastSeq = 0;
+    state.task.log = [];
+    state.task.finishedAt = 0;
+    if ($('crawl-log')) $('crawl-log').innerHTML = '';
+    pollTask(true);
+    return data.task;
+  } catch (err) {
+    toast('启动失败：' + err.message);
+    return null;
+  }
+}
+
+async function pollTask(reset) {
+  if (reset) state.task.lastSeq = 0;
+  clearTimeout(state.task.timer);
+  let data = null;
+  try {
+    data = await fetch('/api/tasks/status?since=' + state.task.lastSeq).then((r) => r.json());
+  } catch (err) {
+    state.task.timer = setTimeout(() => pollTask(false), 3000);
+    return;
+  }
+
+  if (data.task && data.task.id && data.task.id !== state.task.id) {
+    state.task.id = data.task.id;
+    state.task.lastSeq = 0;
+    state.task.log = [];
+    if ($('crawl-log')) $('crawl-log').innerHTML = '';
+    state.task.timer = setTimeout(() => pollTask(false), 60);
+    return;
+  }
+
+  state.task.lastData = data;
+  state.task.kind = (data.task && data.task.kind) || state.task.kind;
+  const wasRunning = state.task.running;
+  state.task.running = data.status === 'running';
+  state.task.status = data.status;
+
+  if (data.lines && data.lines.length) {
+    state.task.log.push(...data.lines);
+    if (state.task.log.length > 1500) state.task.log = state.task.log.slice(-1500);
+    if (state.page === 'crawl') appendCrawlLog(data.lines);
+    if ($('log-drawer').classList.contains('show')) {
+      $('log-body').textContent = state.task.log.join('\n');
+      $('log-body').scrollTop = $('log-body').scrollHeight;
+    }
+  }
+  state.task.lastSeq = data.seq || state.task.lastSeq;
+
+  renderTaskbar(data);
+  renderCrawlPanel(data);
+
+  if (state.task.running) {
+    state.task.timer = setTimeout(() => pollTask(false), 1000);
+  } else {
+    if (wasRunning) onTaskFinished(data);
+    state.task.timer = setTimeout(() => pollTask(false), 4000);
+  }
+}
+
+function renderTaskbar(data) {
+  const running = data.status === 'running';
+  const recent = state.task.finishedAt && Date.now() - state.task.finishedAt < 8000;
+  const visible = (running || recent) && state.page !== 'crawl';
+  $('taskbar').classList.toggle('show', !!visible);
+  if (!visible) return;
+
+  const progress = data.progress || {};
+  const kind = (data.task && data.task.kind) || state.task.kind;
+  const label = TASK_LABEL[kind] || '任务';
+  $('task-label').textContent = running ? `${label} · ${progress.text || ''}` : `${label} · ${data.status === 'done' ? '已完成' : (data.status === 'cancelled' ? '已停止' : '失败')}`;
+  $('task-bar').style.width = (progress.percent || 0) + '%';
+  $('task-pct').textContent = (progress.percent || 0) + '%';
+  $('task-dot').className = 'dot ' + (running ? 'run' : (data.status === 'done' ? 'ok' : 'bad'));
+  $('task-stop').disabled = !running;
+}
+
+function renderCrawlPanel(data) {
+  if (!data || !$('crawl-status-text')) return;
+  const map = {
+    idle: ['空闲', ''], running: ['运行中', 'run'],
+    done: ['已完成', 'ok'], failed: ['失败', 'bad'], cancelled: ['已取消', 'bad']
+  };
+  const entry = map[data.status] || map.idle;
+  $('crawl-status-text').textContent = entry[0];
+  $('crawl-status-dot').className = 'dot ' + entry[1];
+
+  const task = data.task || {};
+  let meta = '';
+  if (task.kind === 'setup') meta = '启动 Chrome';
+  else if (task.kind === 'crawl' && task.keyword) {
+    meta = `${task.keyword} · ${task.city || ''} · ${task.pages || 0} 页 · ${data.elapsed || 0}s`;
+  } else if (state.task.kind) {
+    meta = `${TASK_LABEL[state.task.kind] || ''} · ${data.elapsed || 0}s`;
+  }
+  $('crawl-meta').textContent = meta;
+
+  const progress = data.progress || {};
+  $('crawl-bar').style.width = (progress.percent || 0) + '%';
+  $('crawl-phase').textContent = progress.text || '等待开始';
+  $('c-start').disabled = data.status === 'running';
+  $('c-stop').disabled = data.status !== 'running';
+  $('crawl-log').classList.toggle('idle', data.status === 'idle');
+}
+
+function appendCrawlLog(lines) {
+  const box = $('crawl-log');
+  if (!box) return;
+  const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 40;
+  lines.forEach((line) => {
+    const div = document.createElement('div');
+    div.className = 'log-line';
+    if (line.indexOf('❌') >= 0) div.classList.add('err');
+    else if (line.indexOf('⚠️') >= 0) div.classList.add('warn');
+    else if (line.indexOf('✅') >= 0 || line.indexOf('📁') >= 0) div.classList.add('ok');
+    div.textContent = line;
+    box.appendChild(div);
+  });
+  while (box.childNodes.length > 800) box.removeChild(box.firstChild);
+  if (atBottom) box.scrollTop = box.scrollHeight;
+}
+
+function onTaskFinished(data) {
+  state.task.finishedAt = Date.now();
+  const kind = (data.task && data.task.kind) || state.task.kind;
+  if (data.status === 'done') toast((TASK_LABEL[kind] || '任务') + '完成');
+  else if (data.status === 'cancelled') toast('任务已停止');
+  else toast('任务失败：' + (data.error || '查看日志'));
+
+  refreshEnv();
+  if (state.page === 'crawl') refreshHistory();
+
+  if (data.status !== 'done') return;
+  if (kind === 'parse') { loadResume(); loadAll(); }
+  else if (kind === 'match') { loadAll(); loadTop10(); }
+  else if (kind === 'top10') loadTop10();
+  else if (kind === 'cities') { loadCities(); loadSettings(); }
+  else if (kind === 'report') loadAll();
+  else if (kind === 'crawl') loadAll();
+}
+
+/* ---------- 初始化 ---------- */
+document.querySelectorAll('.nav-item').forEach((el) => {
+  el.addEventListener('click', () => switchPage(el.dataset.page));
+});
+window.addEventListener('hashchange', () => {
+  const name = (location.hash || '').replace('#', '');
+  switchPage(PAGES[name] ? name : 'overview', true);
+});
+window.addEventListener('resize', () => {
+  Object.keys(state.charts).forEach((key) => state.charts[key].resize());
+});
+['f-keyword', 'f-score', 'f-city', 'f-edu'].forEach((id) => {
+  $(id).addEventListener('input', renderJobs);
+  $(id).addEventListener('change', renderJobs);
+});
+
+const drop = $('resume-drop');
+['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => {
+  e.preventDefault(); drop.classList.add('drag');
+}));
+['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => {
+  e.preventDefault(); drop.classList.remove('drag');
+}));
+drop.addEventListener('drop', (e) => {
+  const file = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (file) uploadResume(file);
+});
+$('resume-file').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (file) uploadResume(file);
+  e.target.value = '';
+});
+
+const initial = (location.hash || '').replace('#', '');
+state.page = PAGES[initial] ? initial : 'overview';
+loadAll();
+refreshEnv();
+pollTask(false);
+checkVersion();
+</script>
+</body>
+</html>

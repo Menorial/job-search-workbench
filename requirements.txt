@@ -1,0 +1,17 @@
+# Boss-Zhipin crawler + AI job assistant dependencies
+# Install: pip install -r requirements.txt
+
+# ---- Crawler ----
+websocket-client>=1.6,<2      # CDP WebSocket
+requests>=2.28,<3             # CDP 端口/标签页探测
+
+# ---- AI job assistant ----
+openai>=1.40,<4               # DeepSeek OpenAI-compatible API
+python-dotenv>=1.0,<2         # load .env config
+pdfplumber>=0.11,<1           # PDF resume parsing
+python-docx>=1.1,<2           # Word resume parsing
+
+# ---- Dashboard ----
+fastapi>=0.110,<1             # web framework
+uvicorn>=0.29,<1              # ASGI server
+markdown>=3.5,<4              # report markdown rendering

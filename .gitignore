@@ -1,0 +1,48 @@
+# ============ 敏感文件（绝对不能上传） ============
+# 注意：gitignore 不支持行尾注释，注释必须单独占一行
+
+# API Key 与本地配置
+.env
+
+# ============ 数据 / 运行产物 ============
+# 整个 data/ 都不要进仓库：登录态、简历、抓取结果、日志
+data/*
+!data/.gitkeep
+
+# 官网抓取的完整城市列表（可随时重新生成）
+crawler/cities_full.json
+
+# ============ Python ============
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+_tmp_tests/
+.pytest_tmp/
+.coverage
+htmlcov/
+
+# ============ IDE / 编辑器 ============
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ============ 系统文件 ============
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============ 日志 / 临时文件 ============
+*.log
+*.tmp
+*.temp
+*.bak
